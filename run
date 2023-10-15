@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+export PYTHONPATH=$(pwd)/src/internetbanking
+set -a
+. ./.env && python -m $@
