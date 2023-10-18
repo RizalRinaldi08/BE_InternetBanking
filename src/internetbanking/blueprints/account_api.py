@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Account, User, Branch
+from models import Account, User, Branch, Transaction,TransactionStatus
 from datetime import datetime
 from db import session
 from flask_jwt_extended import jwt_required, get_jwt
@@ -11,12 +11,12 @@ account_api = Blueprint('account_api', __name__)
 
 
 @account_api.route('/account/<int:id_account>', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_balance(id_account):
     account = Account.query.get(id_account)
-    j = get_jwt()
-    if j["is_admin"] == False:
-        return jsonify ({"msg": "You Are Not Allowed"}), 401
+    # j = get_jwt()
+    # if j["is_admin"] == False:
+    #     return jsonify ({"msg": "You Are Not Allowed"}), 401
     # print (j["role"])
     if not account:
         return {'error': 'Account Not Found'}, 404
@@ -31,8 +31,9 @@ def get_balance(id_account):
 @account_api.route('/account', methods=['POST'])
 def create_account():
     data = request.get_json()
-    user = User.query.get(data['id_user'])
-    branch = Branch.query.get(data['id_branch'])
+    user = User.query.filter_by(username=data.get('username')).first()
+    branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    print(user,branch)
     
     if not user :
         return { 'error': 'User not found'}, 404
@@ -45,44 +46,74 @@ def create_account():
         return { 'error' : 'Minimum Balance 50.000'}, 400
 
     account = Account (    
-        id_user = data['id_user'],
+        id_user = user.id_user,
+        id_branch = branch.id_branch,
         account_name = data['account_name'],
-        balance = balance,
-        id_branch = data['id_branch']
+        nomor_rekening = data['nomor_rekening'],
+        balance = 0
     )
     session.add(account)
+
+    transaction = Transaction (
+        amount = balance,
+        type_transaction = TransactionStatus.CREDIT,
+        nomor_rekening = account.nomor_rekening,
+        notes = "FIRST TOP UP"
+    )
+    account.balance += balance
+
+    session.add(transaction)
     session.commit()
     return {
         'Account Nama' : account.account_name,
         'Balance' : account.balance,
         'Acount Active' : account.is_active,
+        'nomor_rekening' : account.nomor_rekening,
         'Nama' : user.nama,
         'Branch' : branch.city,
-        'Address of Branch' : branch.address
+        'Branch Name' : branch.branch_name,
+        'Branch Code' : branch.branch_code,
+        'Address of Branch' : branch.address, 
+        'Notes' : transaction.notes
     }, 201
 
-@account_api.route('/account/<int:id>', methods=['PUT'])
-def update_account(id):
+@account_api.route('/account/<uuid:id_account>', methods=['PUT'])
+def update_account(id_account):
     data = request.get_json()
-    account = Account.query.filter_by(id_account=id).first()
+    account = Account.query.filter_by(id_account=id_account).first()
+    user = User.query.filter_by(username=data.get('username')).first()
+    branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    print(user,branch)
 
-    if not account :
-        return {'error': 'Account Not Found'}, 404
+    account.account_name = data['account_name']
+    account.nomor_rekening = data['nomor_rekening']
+    account.branch_name = data['branch_name']
+
+    # if not account :
+    #     return {'error': 'Account Not Found'}, 404
     
-    if 'account_name' in data:
-        account.account_name = data['account_name']
-    if 'balance' in data:
-        balance = data['balance']
-        if balance < 50000:
-            return {'error' : 'Minimum balance 50.000'}, 400
-        account.balance = balance
-    if 'is_active' in data:
-        account.is_active = data['is_active']
-    if 'id_branch' in data:
-        branch = Branch.query.get(data['id_branch'])
-        if not branch :
-            return {'error':'Branch Not Found'}, 404
-        account.id_branch = data['id_branch']
+    # if 'account_name' in data:
+    #     account.account_name = data['account_name']
+    # if 'balance' in data:
+    #     balance = data['balance']
+    #     if balance < 50000:
+    #         return {'error' : 'Minimum balance 50.000'}, 400
+    #     account.balance = balance
+    # if 'is_active' in data:
+    #     account.is_active = data['is_active']
+    # if 'city' in data:
+    #     branch = Branch.query.get(data['city'])
+    #     if not branch :
+    #         return {'error':'City Not Found'}, 404
+    #     account.city = data['city']
+    # if 'branch_name' in data:
+    #     branch = Branch.query.get(data['branch_name'])
+    #     if not branch :
+    #         return {'error':'Branch Name Not Found'}, 404
+    # if 'branch_code' in data:
+    #     branch = Branch.query.get(data['branch_code'])
+    #     if not branch:
+    #         return{'error': 'Branch Code Not Found'}, 404
     session.commit()
     return {
         'Succes' : 'Account Has Been Succesfully Updated',
@@ -90,8 +121,10 @@ def update_account(id):
         'Balance' : account.balance,
         'Acount Active' : account.is_active,
         'Nama' : account.user.nama,
-        'Branch' : account.branch.city,
-        'Address of Branch' : account.branch.address
+        'Branch' : branch.city,
+        'Branch Name' : branch.branch_name,
+        'Branch Code' : branch.branch_code,
+        'Address of Branch' : branch.address
     }, 201
 
 @account_api.route('/account/:id/close',methods=['PUT'])

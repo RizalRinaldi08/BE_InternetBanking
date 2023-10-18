@@ -17,7 +17,7 @@ LEFT JOIN
 LEFT JOIN
     tb_transaction AS to_transaction ON tb_account.id_account = to_transaction.to_account_id
 WHERE
-	u."isAdmin" IS FALSE AND 
+	u."is_admin" IS FALSE AND 
     (from_transaction.created_at >= NOW() - INTERVAL '3 months')
     or (to_transaction.created_at >= NOW() - INTERVAL '3 months')
 GROUP BY tb_account.id_account
@@ -26,5 +26,5 @@ GROUP BY tb_account.id_account
 
 accounts = session.execute(query)
 for account in accounts:
-    account.isActive = False
+    account.is_active = False
 session.commit()

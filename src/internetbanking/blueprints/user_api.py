@@ -11,11 +11,11 @@ bcrypt = Bcrypt(app)
 
 
 @user_api.route('/user', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_user():
-    j = get_jwt()
-    if j["is_admin"]==False:
-        return {"msg":"You Are Not Allowed"}, 401
+    # j = get_jwt()
+    # if j["is_admin"]==False:
+    #     return {"msg":"You Are Not Allowed"}, 401
     users = User.query.all()
     user_list = []
 
@@ -25,7 +25,7 @@ def get_user():
         "Username": user.username,
         "Alamat": user.alamat,
         "HP" :user.hp,
-        "isAdmin": user.isAdmin
+        "is_admin": user.is_admin
         }
         user_list.append(user_data)
 
@@ -36,7 +36,7 @@ def get_user():
 @user_api.route('/user', methods=['POST'])
 def create_user():
     data = request.get_json()
-    password = request.get_json("password", None)
+    password = data.get("password", None)
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
     # print(data)
     user = User (
@@ -46,7 +46,7 @@ def create_user():
         # created_at=datetime.now(),
         username = data['username'],
         password = hashed_password,
-        isAdmin = data['isAdmin']
+        is_admin = data['is_admin']
     )
     print(user)
     session.add(user)
@@ -56,15 +56,16 @@ def create_user():
         'Alamat' : user.alamat,
         'Hp' : user.hp,
         'Tanggal Pembuatan' : user.created_at,
-        'isAdmin' : user.isAdmin
+        'is_admin' : user.is_admin
     }, 201
 
-@user_api.route('/user/<int:id>', methods=['PUT'])
-def update_user(id):
+@user_api.route('/user/<uuid:id_user>', methods=['PUT'])
+def update_user(id_user):
     data = request.get_json()
+    print(id_user)
     password = data.get("password")
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-    user = User.query.filter_by(id_user=id).first()
+    user = User.query.filter_by(id_user=id_user).first()
     user.nama = data['nama']
     user.alamat = data['alamat']
     user.hp = data['hp']

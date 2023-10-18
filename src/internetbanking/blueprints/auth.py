@@ -20,7 +20,7 @@ def login():
 
     if match == True:
         access_token = create_access_token(identity=username, 
-                                            additional_claims={"is_admin": user.isAdmin})
+                                            additional_claims={"is_admin": user.is_admin})
             
         refresh_token = create_refresh_token(identity=username)
 

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import Transaction, Account, TransactionStatus
 from db import session
 from flask import Flask
+from sqlalchemy import or_
 import os 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -14,14 +15,14 @@ transaction_api = Blueprint('transaction_api', __name__)
 @transaction_api.route('/credit_transaction', methods=['POST'])
 def credit_transaction():
     data = request.get_json()
-    id_account = data.get('id_account')
+    nomor_rekening = data.get('nomor_rekening')
     amount = data.get('amount')
+    notes = data.get('notes')
 
-    if id_account is None or amount is None :
+    if nomor_rekening is None or amount is None :
         return jsonify ({'error': 'Invalid Data'}), 400
     
-    account = session.query(Account).filter_by(id_account=id_account).first()
-
+    account = session.query(Account).filter_by(nomor_rekening=nomor_rekening).first()
 
     if not account :
         return jsonify ({'error' : 'Account Not Found'}), 400
@@ -29,15 +30,15 @@ def credit_transaction():
     if amount < 50000:
         return jsonify ({'error' : 'Minimum amount 50000'}), 400
     
-    #memperbaharui saldo(balance) akun dengan menambahkan amount
+    #memperbaharui saldo(Balance) akun dengan menambahkan amount
     account.balance += amount
 
     #membuat objek transaksi
     transaction = Transaction (
-        from_account_id = data['id_account'],
-        to_account_id = data['id_account'],
+        nomor_rekening = data['nomor_rekening'],
         type_transaction = TransactionStatus.CREDIT,
-        amount = data['amount']
+        amount = data['amount'],
+        notes = data['notes']
     )
 
     session.add(transaction)
@@ -50,13 +51,14 @@ def credit_transaction():
 @transaction_api.route('/debit_transaction', methods=['POST'])
 def debit_transaction():
     data = request.get_json()
-    id_account = data.get('id_account')
+    nomor_rekening = data.get('nomor_rekening')
     amount = data.get('amount')
+    notes = data.get('notes')
 
-    if id_account is None or amount is None :
+    if nomor_rekening is None or amount is None :
         return jsonify ({'error': 'Invalid Data'}), 400
     
-    account = session.query(Account).filter_by(id_account=id_account).first()
+    account = session.query(Account).filter_by(nomor_rekening=nomor_rekening).first()
 
 
     if not account :
@@ -73,10 +75,11 @@ def debit_transaction():
 
     #membuat objek transaksi
     transaction = Transaction (
-        from_account_id = data['id_account'],
-        to_account_id = data['id_account'],
+        nomor_rekening = data['nomor_rekening'],
         type_transaction = TransactionStatus.DEBIT,
-        amount = data['amount']
+        amount = data['amount'],
+        notes = data['notes']
+
     )
 
     session.add(transaction)
@@ -89,15 +92,17 @@ def debit_transaction():
 @transaction_api.route('/transfer_transaction', methods=['POST'])
 def transfer_transaction():
     data = request.get_json()
-    from_account_id = data.get('from_account_id')
-    to_account_id = data.get('to_account_id')
+    from_nomor_rekening = data.get('from_nomor_rekening')
+    to_nomor_rekening = data.get('to_nomor_rekening')
     amount = data.get('amount')
+    notes = data.get('notes')
+    print(from_nomor_rekening, to_nomor_rekening, amount, notes)
 
-    if from_account_id is None or to_account_id is None or amount is None:
+    if from_nomor_rekening is None or to_nomor_rekening is None or amount is None:
         return jsonify ({'message:' : 'Invalid Data'})
     
-    from_account = Account.query.filter_by(id_account=from_account_id).first()
-    to_account = Account.query.filter_by(id_account=to_account_id).first()
+    from_account = Account.query.filter_by(nomor_rekening=from_nomor_rekening).first()
+    to_account = Account.query.filter_by(nomor_rekening=to_nomor_rekening).first()
 
     if not from_account or not to_account:
         return jsonify ({'error' : 'One or both account not Found'}), 404
@@ -115,20 +120,22 @@ def transfer_transaction():
 
     to_account.balance += amount
 
-    transaction_form = Transaction (
-        from_account_id = from_account_id,
-        to_account_id = to_account_id,
-        type_transaction = TransactionStatus.TRANSFER,
-        amount = amount
+    transaction_form_debit= Transaction (
+        nomor_rekening = from_nomor_rekening,
+        type_transaction = TransactionStatus.DEBIT,
+        amount = amount,
+        notes = notes
     ) 
+    session.add(transaction_form_debit)
 
-    # transaction_to = Transaction(
-    #     to_account_id = data.get(to_account_id),
-    #     type_transaction =TransactionStatus.CREDIT,
-    #     amount = amount
-    # )
+    transaction_form_credit = Transaction(
+        nomor_rekening = to_nomor_rekening,
+        type_transaction =TransactionStatus.CREDIT,
+        amount = amount,
+        notes = notes
+    )
 
-    session.add(transaction_form)
+    session.add( transaction_form_credit)
     session.commit()
 
     return jsonify ({
@@ -137,20 +144,55 @@ def transfer_transaction():
 
 @transaction_api.route('/history', methods=['GET'])
 def get_history():
-    # data = request.get_json()
-    transactions = Transaction.query.all()
+    data = request.get_json()
+    nomor_rekening = data.get('nomor_rekening')
+    transactions = Transaction.query.filter_by(nomor_rekening=nomor_rekening).order_by(Transaction.created_at.asc()).all()
 
+    print(transactions)
+
+
+    # transactions = Transaction.query.filter(or_(Transaction.from_nomor_rekening == nomor_rekening, Transaction.to_nomor_rekening == nomor_rekening)).order_by(Transaction.created_at.asc()).all()
+    # User.query.order_by(User.popularity.desc(), User.date_created.desc()).limit(10).all()
+    # print(transactions)
     transaction_list = []
 
+
+    last_balance = 0
     for transaction in transactions:
         transaction_data = {
-            "id_transaction" : transaction.id_transaction,
-            "type_transaction" : transaction.type_transaction,
-            "amount" : transaction.amount,
-            "created_at" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            "Balance" : last_balance,
+            "Tanggal Transaksi" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
+        if transaction.type_transaction == TransactionStatus.CREDIT:
+            transaction_data['CREDIT'] = transaction.amount
+            transaction_data['DEBIT'] = 0
+            transaction_data['Balance'] += transaction.amount
+        else:
+            transaction_data['DEBIT'] = transaction.amount
+            transaction_data['CREDIT'] = 0
+            transaction_data['Balance'] -= transaction.amount
+        last_balance = transaction_data['Balance']
+        transaction_data['notes'] = transaction.notes
+    #     if transaction.from_nomor_rekening != transaction.to_nomor_rekening:
+    #         if transaction.from_nomor_rekening == nomor_rekening:
+    #             transaction_data['DEBIT'] = -1*transaction.amount
+    #             transaction_data['CREDIT'] = 000
+    #         else:
+    #             transaction_data['CREDIT'] = transaction.amount
+    #             transaction_data['DEBIT'] = 000
+    #     else :
+    #         if transaction.amount > 0 :
+    #             transaction_data['CREDIT'] = transaction.amount
+    #             transaction_data['DEBIT'] = 000
+    #         else :
+    #             transaction_data['DEBIT'] = -1*transaction.amount
+    #             transaction_data['CREDIT'] = 000
+
         transaction_list.append(transaction_data)
+    # for e in transaction_list:
+    #     print(e)
     return jsonify ({'transaction': transaction_list})
+
 
 
 
