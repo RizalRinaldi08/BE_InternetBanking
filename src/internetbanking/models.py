@@ -55,7 +55,7 @@ class Branch(Base):
 
 
     def __repr__(self) -> str:
-        return f'<Branch city={self.city}>'
+        return f'<Branch city={self.branch_name}>'
 
 class Account(Base):
     __tablename__ = 'tb_account'

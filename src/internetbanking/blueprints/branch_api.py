@@ -10,11 +10,11 @@ def get_branch():
     return "Berhasil"
 
 @branch_api.route('/branch', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def create_branch():
-    # j = get_jwt()
-    # if j["is_admin"] == False:
-    #     return {"msg":"You Are Not Allowed"}, 401
+    j = get_jwt()
+    if j["is_admin"] == False:
+        return {"msg":"You Are Not Allowed"}, 401
     data = request.get_json()
 
     branch = Branch (
@@ -33,11 +33,11 @@ def create_branch():
     }, 201
 
 @branch_api.route('/branch/<uuid:id_branch>', methods= ['PUT'])
-# @jwt_required()
+@jwt_required()
 def update_branch(id_branch):
-    # j = get_jwt()
-    # if j["is_admin"] == False :
-    #     return {"msg":"You Are Not Allowe"}, 401
+    j = get_jwt()
+    if j["is_admin"] == False :
+        return {"msg":"You Are Not Allowe"}, 401
     data = request.get_json()
     branch = Branch.query.filter_by(id_branch=id_branch).first()
     branch.city = data['city']

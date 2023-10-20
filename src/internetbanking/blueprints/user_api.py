@@ -11,11 +11,11 @@ bcrypt = Bcrypt(app)
 
 
 @user_api.route('/user', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_user():
-    # j = get_jwt()
-    # if j["is_admin"]==False:
-    #     return {"msg":"You Are Not Allowed"}, 401
+    j = get_jwt()
+    if j["is_admin"]==False:
+        return {"msg":"You Are Not Allowed"}, 401
     users = User.query.all()
     user_list = []
 
@@ -48,7 +48,8 @@ def create_user():
         password = hashed_password,
         is_admin = data['is_admin']
     )
-    print(user)
+    # print
+    # (user)
     session.add(user)
     session.commit()
     return {

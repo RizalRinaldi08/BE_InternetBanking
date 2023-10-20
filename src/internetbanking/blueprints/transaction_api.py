@@ -147,15 +147,9 @@ def get_history():
     data = request.get_json()
     nomor_rekening = data.get('nomor_rekening')
     transactions = Transaction.query.filter_by(nomor_rekening=nomor_rekening).order_by(Transaction.created_at.asc()).all()
-
-    print(transactions)
-
-
-    # transactions = Transaction.query.filter(or_(Transaction.from_nomor_rekening == nomor_rekening, Transaction.to_nomor_rekening == nomor_rekening)).order_by(Transaction.created_at.asc()).all()
-    # User.query.order_by(User.popularity.desc(), User.date_created.desc()).limit(10).all()
     # print(transactions)
-    transaction_list = []
 
+    transaction_list = []
 
     last_balance = 0
     for transaction in transactions:

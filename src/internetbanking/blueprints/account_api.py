@@ -11,13 +11,13 @@ account_api = Blueprint('account_api', __name__)
 
 
 @account_api.route('/account/<int:id_account>', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_balance(id_account):
     account = Account.query.get(id_account)
-    # j = get_jwt()
-    # if j["is_admin"] == False:
-    #     return jsonify ({"msg": "You Are Not Allowed"}), 401
-    # print (j["role"])
+    j = get_jwt()
+    if j["is_admin"] == False:
+        return jsonify ({"msg": "You Are Not Allowed"}), 401
+    print (j["role"])
     if not account:
         return {'error': 'Account Not Found'}, 404
 
@@ -29,7 +29,11 @@ def get_balance(id_account):
 
 
 @account_api.route('/account', methods=['POST'])
+@jwt_required()
 def create_account():
+    j = get_jwt()
+    if j["is_admin"] == False:
+        return jsonify ({"msg" : "You Are Not Allowed"}), 401
     data = request.get_json()
     user = User.query.filter_by(username=data.get('username')).first()
     branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
@@ -78,12 +82,16 @@ def create_account():
     }, 201
 
 @account_api.route('/account/<uuid:id_account>', methods=['PUT'])
+@jwt_required()
 def update_account(id_account):
+    j = get_jwt()
+    if j["is_admin"]==False:
+        return jsonify ({"msg":"You Are Not Allowed"}), 401
     data = request.get_json()
     account = Account.query.filter_by(id_account=id_account).first()
-    user = User.query.filter_by(username=data.get('username')).first()
+    # user = User.query.filter_by(username=data.get('username')).first()
     branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
-    print(user,branch)
+    # print(user,branch)
 
     account.account_name = data['account_name']
     account.nomor_rekening = data['nomor_rekening']
@@ -128,7 +136,11 @@ def update_account(id_account):
     }, 201
 
 @account_api.route('/account/:id/close',methods=['PUT'])
+@jwt_required()
 def close_account(id):
+    j = get_jwt()
+    if j["is_admin"]==False:
+        return jsonify ({"msg":"You Are Not Allowed"})
     account = Account.query.get(id_account=id)
     if not account:
         return{'error':'Account not found'}, 404
