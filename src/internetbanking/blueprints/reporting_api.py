@@ -50,7 +50,7 @@ def branch_report():
 
     # Mengkonversi hasil query ke format JSON
     report_data = []
-    for city,branch_name, branch_code,address, num_accounts, num_users, total_balance, in branch_report:
+    for city,address ,branch_name, branch_code, num_accounts, num_users, total_balance, in branch_report:
         report_data.append({
             'city': city,
             'address' : address,
@@ -89,7 +89,7 @@ def get_dormant():
         'balance': account.balance,
         'is_active': account.is_active,
         'branch_name': account.branch_name,
-        'dormant_period(days)': (datetime.now() - account.created_at).days
+        'dormant_period(days)': f'{(datetime.now() - account.created_at).days} days'
     } for account in accounts]
 
     

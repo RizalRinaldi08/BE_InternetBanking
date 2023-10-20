@@ -1,23 +1,23 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, abort
 from models import Account, User, Branch, Transaction,TransactionStatus
 from datetime import datetime
 from db import session
 from flask_jwt_extended import jwt_required, get_jwt
-
 
 account_api = Blueprint('account_api', __name__)
 
 #membuat endpoint untuk get saldo
 
 
-@account_api.route('/account/<int:id_account>', methods=['GET'])
+@account_api.route('/account/<uuid:id_account>', methods=['GET'])
 @jwt_required()
 def get_balance(id_account):
-    account = Account.query.get(id_account)
+    account = Account.query.filter_by(id_account=id_account).first()
+    if account == None:
+        abort(404)
     j = get_jwt()
     if j["is_admin"] == False:
         return jsonify ({"msg": "You Are Not Allowed"}), 401
-    print (j["role"])
     if not account:
         return {'error': 'Account Not Found'}, 404
 

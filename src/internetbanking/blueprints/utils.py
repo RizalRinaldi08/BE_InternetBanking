@@ -114,27 +114,59 @@ def get_branch():
     return {'branch_report': report_data}
 
 def get_dormant():
-    accounts = Account.query.filter_by(is_active=False).all()
+    accounts = session.query(
+        Account.account_name, 
+        Account.balance, 
+        Account.is_active, 
+        Branch.branch_name,
+        Transaction.created_at
+    ).outerjoin(
+        Branch, 
+        Branch.id_branch == Account.id_branch
+    ).outerjoin(
+        Transaction, 
+        Transaction.nomor_rekening == Account.nomor_rekening
+    ).filter(
+        Account.is_active.is_(False)
+    ).order_by(
+        Transaction.created_at.desc()
+    ).all()
+    # print(accounts)
+    dormant_accounts = [{
+        'account_name': account.account_name,
+        'balance': account.balance,
+        'is_active': account.is_active,
+        'branch_name': account.branch_name,
+        'dormant_period(days)': f'{(datetime.now() - account.created_at).days} days'
+    } for account in accounts]
+
     
-    dormant_accounts = []
-    for account in accounts :
-        branch = Branch.query.get(account.id_branch)
-        
-        last_transaction = Transaction.query.filter_by(id_transaction= account.id_account).order_by(Transaction.created_at.desc()).first()
-
-        if last_transaction:
-            dormant_period = datetime.now() - last_transaction.created_at
-        else:
-            dormant_period = None  
-
-        dormant_account_info = {
-                'Account Name' : account.account_name,
-                'Balance' : account.balance,
-                'is_active' : account.is_active,
-                'City' : branch.city,
-                'Branch_name' : branch.branch_name,
-                'Address' : branch.address,
-                'Dormant Period (days)' : dormant_period.days if dormant_period else None
-        }
-        dormant_accounts.append(dormant_account_info)
     return dormant_accounts
+
+
+
+
+    # accounts = Account.query.filter_by(is_active=False).all()
+    
+    # dormant_accounts = []
+    # for account in accounts :
+    #     branch = Branch.query.get(account.id_branch)
+        
+    #     last_transaction = Transaction.query.filter_by(id_transaction= account.id_account).order_by(Transaction.created_at.desc()).first()
+
+    #     if last_transaction:
+    #         dormant_period = datetime.now() - last_transaction.created_at
+    #     else:
+    #         dormant_period = None  
+
+    #     dormant_account_info = {
+    #             'Account Name' : account.account_name,
+    #             'Balance' : account.balance,
+    #             'is_active' : account.is_active,
+    #             'City' : branch.city,
+    #             'Branch_name' : branch.branch_name,
+    #             'Address' : branch.address,
+    #             'Dormant Period (days)' : dormant_period.days if dormant_period else None
+    #     }
+    #     dormant_accounts.append(dormant_account_info)
+    # return dormant_accounts
