@@ -14,20 +14,19 @@ from uuid import uuid4
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
-
 class TransactionStatus(str, enum.Enum):
-    DEBIT = "DEBIT"
-    CREDIT = "CREDIT"
+    debit = "debit"
+    credit = "credit"
 
 class User(Base):
     __tablename__ = 'tb_user'
 
     id_user:Mapped[uuid4] = mapped_column(UUID(as_uuid=True),default=uuid4, primary_key=True)
-    nama:Mapped[str] = mapped_column(nullable=False)
+    name:Mapped[str] = mapped_column(nullable=False)
     username:Mapped[str] = mapped_column(unique=True,nullable=False)
     password:Mapped[str] = mapped_column(nullable=False)
-    alamat:Mapped[str] = mapped_column(nullable=False)
-    hp:Mapped[str] = mapped_column( nullable=False)
+    address:Mapped[str] = mapped_column(nullable=False)
+    phone_number:Mapped[str] = mapped_column( nullable=False)
     created_at:Mapped[datetime] = mapped_column(server_default=func.now())
     is_admin:Mapped[bool] = mapped_column(default=False, nullable=False)
     
@@ -37,7 +36,7 @@ class User(Base):
     # accounts:Mapped[List["Account"]] = relationship('Account',back_populates='user', lazy='select')
 
     def __repr__(self) -> str:
-        return f'<User nama={self.nama}>'
+        return f'<User name={self.name}>'
 
 class Branch(Base):
     __tablename__ ='tb_branch'
@@ -62,7 +61,7 @@ class Account(Base):
 
     id_account:Mapped[uuid4] = mapped_column(UUID(as_uuid=True), default=uuid4)
     #  id_transaction:Mapped[uuid4] = mapped_column(UUID(as_uuid=True),primary_key=True, default=uuid4)
-    nomor_rekening:Mapped[str] = mapped_column(String(10),unique=True,nullable=False, primary_key=True)
+    account_number:Mapped[str] = mapped_column(String(10),unique=True,nullable=False, primary_key=True)
     account_name:Mapped[str] = mapped_column(nullable=False)
     balance:Mapped[float] = mapped_column(nullable=False)
     is_active:Mapped[bool] = mapped_column(default=True)
@@ -80,8 +79,8 @@ class Transaction(Base):
 
     id_transaction:Mapped[uuid4] = mapped_column(UUID(as_uuid=True),primary_key=True, default=uuid4)
     #  id_user:Mapped[uuid4] = mapped_column(UUID(as_uuid=True),primary_key=True, autoincrement=True,default=uuid4)
-    nomor_rekening:Mapped[str] = mapped_column(ForeignKey('tb_account.nomor_rekening'), nullable=True)
-    # to_nomor_rekening:Mapped[str] = mapped_column(ForeignKey('tb_account.nomor_rekening'), nullable=True)
+    account_number:Mapped[str] = mapped_column(ForeignKey('tb_account.account_number'), nullable=True)
+    # to_account_number:Mapped[str] = mapped_column(ForeignKey('tb_account.account_number'), nullable=True)
     type_transaction:Mapped[TransactionStatus] = mapped_column(Enum(
             TransactionStatus,
             create_constrain=True,

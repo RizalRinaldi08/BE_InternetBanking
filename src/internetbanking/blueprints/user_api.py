@@ -21,10 +21,10 @@ def get_user():
 
     for user in users:
         user_data = {
-        "Nama": user.nama,
+        "name": user.name,
         "Username": user.username,
-        "Alamat": user.alamat,
-        "HP" :user.hp,
+        "address": user.address,
+        "phone_number" :user.phone_number,
         "is_admin": user.is_admin
         }
         user_list.append(user_data)
@@ -40,9 +40,9 @@ def create_user():
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
     # print(data)
     user = User (
-        nama = data['nama'],
-        alamat = data['alamat'],
-        hp = data['hp'],
+        name = data['name'],
+        address = data['address'],
+        phone_number = data['phone_number'],
         # created_at=datetime.now(),
         username = data['username'],
         password = hashed_password,
@@ -53,10 +53,10 @@ def create_user():
     session.add(user)
     session.commit()
     return {
-        'Nama' : user.nama,
-        'Alamat' : user.alamat,
-        'Hp' : user.hp,
-        'Tanggal Pembuatan' : user.created_at,
+        'name' : user.name,
+        'address' : user.address,
+        'phone_number' : user.phone_number,
+        'created_at' : user.created_at,
         'is_admin' : user.is_admin
     }, 201
 
@@ -67,17 +67,17 @@ def update_user(id_user):
     password = data.get("password")
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
     user = User.query.filter_by(id_user=id_user).first()
-    user.nama = data['nama']
-    user.alamat = data['alamat']
-    user.hp = data['hp']
+    user.name = data['name']
+    user.address = data['address']
+    user.phone_number = data['phone_number']
     user.username = data['username']
     user.password = hashed_password
     session.commit()
     return {
-        'Message' : 'Your Data Has Been Succesfully Updated',
-        'nama' : user.nama,
+        'message' : 'your data has been succesfully updated',
+        'name' : user.name,
         'username' : user.username,
-        'alamat' : user.alamat,
-        'hp' : user.hp
+        'address' : user.address,
+        'phone_number' : user.phone_number
     }, 201
         

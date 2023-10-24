@@ -15,28 +15,28 @@ transaction_api = Blueprint('transaction_api', __name__)
 @transaction_api.route('/credit_transaction', methods=['POST'])
 def credit_transaction():
     data = request.get_json()
-    nomor_rekening = data.get('nomor_rekening')
+    account_number = data.get('account_number')
     amount = data.get('amount')
     notes = data.get('notes')
 
-    if nomor_rekening is None or amount is None :
-        return jsonify ({'error': 'Invalid Data'}), 400
+    if account_number is None or amount is None :
+        return jsonify ({'error': 'invalid data'}), 400
     
-    account = session.query(Account).filter_by(nomor_rekening=nomor_rekening).first()
+    account = session.query(Account).filter_by(account_number=account_number).filter_by(is_active=True).first()
 
     if not account :
-        return jsonify ({'error' : 'Account Not Found'}), 400
+        return jsonify ({'error' : 'account not found'}), 400
     
     if amount < 50000:
-        return jsonify ({'error' : 'Minimum amount 50000'}), 400
+        return jsonify ({'error' : 'minimum amount 50000'}), 400
     
     #memperbaharui saldo(Balance) akun dengan menambahkan amount
     account.balance += amount
 
     #membuat objek transaksi
     transaction = Transaction (
-        nomor_rekening = data['nomor_rekening'],
-        type_transaction = TransactionStatus.CREDIT,
+        account_number = data['account_number'],
+        type_transaction = TransactionStatus.credit,
         amount = data['amount'],
         notes = data['notes']
     )
@@ -45,38 +45,38 @@ def credit_transaction():
     session.commit()
 
     return jsonify ({
-        'Message' : 'CREDIT Transaction Succesfully'
+        'Message' : 'credit transaction succesfully'
     })
 
 @transaction_api.route('/debit_transaction', methods=['POST'])
 def debit_transaction():
     data = request.get_json()
-    nomor_rekening = data.get('nomor_rekening')
+    account_number = data.get('account_number')
     amount = data.get('amount')
     notes = data.get('notes')
 
-    if nomor_rekening is None or amount is None :
-        return jsonify ({'error': 'Invalid Data'}), 400
+    if account_number is None or amount is None :
+        return jsonify ({'error': 'invalid data'}), 400
     
-    account = session.query(Account).filter_by(nomor_rekening=nomor_rekening).first()
+    account = session.query(Account).filter_by(account_number=account_number).filter_by(is_active=True).first()
 
 
     if not account :
-        return jsonify ({'error' : 'Account Not Found'}), 400
+        return jsonify ({'error' : 'account not found'}), 400
     
     if account.balance < amount:
-        return jsonify({'error': 'Insufficient balance'}), 400
+        return jsonify({'error': 'insufficient balance'}), 400
     
     if account.balance -amount < 50000:
-        return jsonify ({'error' : 'Minimum balance in account 50000'}), 400
+        return jsonify ({'error' : 'minimum balance in account 50000'}), 400
     
     #memperbaharui saldo(balance) akun dengan menambahkan amount
     account.balance -= amount
 
     #membuat objek transaksi
     transaction = Transaction (
-        nomor_rekening = data['nomor_rekening'],
-        type_transaction = TransactionStatus.DEBIT,
+        account_number = data['account_number'],
+        type_transaction = TransactionStatus.debit,
         amount = data['amount'],
         notes = data['notes']
 
@@ -86,51 +86,53 @@ def debit_transaction():
     session.commit()
 
     return jsonify ({
-        'Message' : 'DEBIT Transaction Succesfully'
+        'message' : 'debit transaction succesfully'
     })
 
 @transaction_api.route('/transfer_transaction', methods=['POST'])
 def transfer_transaction():
     data = request.get_json()
-    from_nomor_rekening = data.get('from_nomor_rekening')
-    to_nomor_rekening = data.get('to_nomor_rekening')
+    from_account_number = data.get('from_account_number')
+    to_account_number = data.get('to_account_number')
     amount = data.get('amount')
     notes = data.get('notes')
-    print(from_nomor_rekening, to_nomor_rekening, amount, notes)
+    print(from_account_number, to_account_number, amount, notes)
 
-    if from_nomor_rekening is None or to_nomor_rekening is None or amount is None:
-        return jsonify ({'message:' : 'Invalid Data'})
+    if from_account_number is None or to_account_number is None or amount is None:
+        return jsonify ({'message:' : 'invalid data'})
     
-    from_account = Account.query.filter_by(nomor_rekening=from_nomor_rekening).first()
-    to_account = Account.query.filter_by(nomor_rekening=to_nomor_rekening).first()
+    from_account = session.query(Account).filter_by(account_number=from_account_number).filter_by(is_active=True).first()
+    to_account = session.query(Account).filter_by(account_number=to_account_number).filter_by(is_active=True).first()
+    # to_account = Account.query.filter_by(account_number=to_account_number).filter_by(is_active=True).first()
+
 
     if not from_account or not to_account:
-        return jsonify ({'error' : 'One or both account not Found'}), 404
+        return jsonify ({'error' : 'one or both account not found'}), 404
     
     if amount < 50000:
-        return jsonify ({'error': 'Minimum Transaction 50.000'}), 400
+        return jsonify ({'error': 'minimum transaction 50.000'}), 400
     
     if from_account.balance < amount :
-        return jsonify ({'error' : 'Insufficient Balance'}), 400
+        return jsonify ({'error' : 'insufficient balance'}), 400
     
     if from_account.balance - amount < 50000:
-        return jsonify({'error': 'Insufficient Balance Saldo'}, 400)
+        return jsonify({'error': 'insufficient balance saldo'}, 400)
     
     from_account.balance -= amount
 
     to_account.balance += amount
 
     transaction_form_debit= Transaction (
-        nomor_rekening = from_nomor_rekening,
-        type_transaction = TransactionStatus.DEBIT,
+        account_number = from_account_number,
+        type_transaction = TransactionStatus.debit,
         amount = amount,
         notes = notes
     ) 
     session.add(transaction_form_debit)
 
     transaction_form_credit = Transaction(
-        nomor_rekening = to_nomor_rekening,
-        type_transaction =TransactionStatus.CREDIT,
+        account_number = to_account_number,
+        type_transaction =TransactionStatus.credit,
         amount = amount,
         notes = notes
     )
@@ -139,14 +141,14 @@ def transfer_transaction():
     session.commit()
 
     return jsonify ({
-        'Message' : 'TRANSFER Transaction Successfully'
+        'message' : 'transfer transaction successfully'
     })
 
 @transaction_api.route('/history', methods=['GET'])
 def get_history():
     data = request.get_json()
-    nomor_rekening = data.get('nomor_rekening')
-    transactions = Transaction.query.filter_by(nomor_rekening=nomor_rekening).order_by(Transaction.created_at.asc()).all()
+    account_number = data.get('account_number')
+    transactions = Transaction.query.filter_by(account_number=account_number).order_by(Transaction.created_at.asc()).all()
     # print(transactions)
 
     transaction_list = []
@@ -154,33 +156,33 @@ def get_history():
     last_balance = 0
     for transaction in transactions:
         transaction_data = {
-            "Balance" : last_balance,
-            "Tanggal Transaksi" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            "balance" : last_balance,
+            "transaction_date" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
-        if transaction.type_transaction == TransactionStatus.CREDIT:
-            transaction_data['CREDIT'] = transaction.amount
-            transaction_data['DEBIT'] = 0
-            transaction_data['Balance'] += transaction.amount
+        if transaction.type_transaction == TransactionStatus.credit:
+            transaction_data['credit'] = transaction.amount
+            transaction_data['debit'] = 0
+            transaction_data['balance'] += transaction.amount
         else:
-            transaction_data['DEBIT'] = transaction.amount
-            transaction_data['CREDIT'] = 0
-            transaction_data['Balance'] -= transaction.amount
-        last_balance = transaction_data['Balance']
+            transaction_data['debit'] = transaction.amount
+            transaction_data['credit'] = 0
+            transaction_data['balance'] -= transaction.amount
+        last_balance = transaction_data['balance']
         transaction_data['notes'] = transaction.notes
-    #     if transaction.from_nomor_rekening != transaction.to_nomor_rekening:
-    #         if transaction.from_nomor_rekening == nomor_rekening:
-    #             transaction_data['DEBIT'] = -1*transaction.amount
-    #             transaction_data['CREDIT'] = 000
+    #     if transaction.from_account_number != transaction.to_account_number:
+    #         if transaction.from_account_number == account_number:
+    #             transaction_data['debit'] = -1*transaction.amount
+    #             transaction_data['credit'] = 000
     #         else:
-    #             transaction_data['CREDIT'] = transaction.amount
-    #             transaction_data['DEBIT'] = 000
+    #             transaction_data['credit'] = transaction.amount
+    #             transaction_data['debit'] = 000
     #     else :
     #         if transaction.amount > 0 :
-    #             transaction_data['CREDIT'] = transaction.amount
-    #             transaction_data['DEBIT'] = 000
+    #             transaction_data['credit'] = transaction.amount
+    #             transaction_data['debit'] = 000
     #         else :
-    #             transaction_data['DEBIT'] = -1*transaction.amount
-    #             transaction_data['CREDIT'] = 000
+    #             transaction_data['debit'] = -1*transaction.amount
+    #             transaction_data['credit'] = 000
 
         transaction_list.append(transaction_data)
     # for e in transaction_list:

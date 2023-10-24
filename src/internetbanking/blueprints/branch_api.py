@@ -14,7 +14,7 @@ def get_branch():
 def create_branch():
     j = get_jwt()
     if j["is_admin"] == False:
-        return {"msg":"You Are Not Allowed"}, 401
+        return {"msg":"you are not allowedd"}, 401
     data = request.get_json()
 
     branch = Branch (
@@ -26,10 +26,10 @@ def create_branch():
     session.add(branch)
     session.commit()
     return {
-        'City' : branch.city,
-        'Address' : branch.address,
-        'Branch Code' : branch.branch_code,
-        'Branch Name' : branch.branch_name
+        'city' : branch.city,
+        'address' : branch.address,
+        'branch_code' : branch.branch_code,
+        'branch_name' : branch.branch_name
     }, 201
 
 @branch_api.route('/branch/<uuid:id_branch>', methods= ['PUT'])
@@ -37,7 +37,7 @@ def create_branch():
 def update_branch(id_branch):
     j = get_jwt()
     if j["is_admin"] == False :
-        return {"msg":"You Are Not Allowe"}, 401
+        return {"msg":"you are not allowed"}, 401
     data = request.get_json()
     branch = Branch.query.filter_by(id_branch=id_branch).first()
     branch.city = data['city']
@@ -46,9 +46,9 @@ def update_branch(id_branch):
     branch.branch_code = data['branch_code']
     session.commit()
     return {
-        'Message' : 'Branch Data Has Been Succesfully Updated',
-        'City' : branch.city,
-        'Address' : branch.address,
-        'Branch Name' : branch.branch_name,
-        'Branch Code' : branch.branch_code
+        'message' : 'branch data has been succesfully updated',
+        'city' : branch.city,
+        'address' : branch.address,
+        'branch_name' : branch.branch_name,
+        'branch_code' : branch.branch_code
     }, 201

@@ -1,8 +1,8 @@
-"""update_column_first
+"""first_version
 
-Revision ID: ef9ad9d16128
+Revision ID: b977906b62b6
 Revises: 
-Create Date: 2023-10-17 16:47:35.487249
+Create Date: 2023-10-23 12:04:13.722592
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ef9ad9d16128'
+revision: str = 'b977906b62b6'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,18 +25,18 @@ def upgrade() -> None:
     sa.Column('city', sa.String(), nullable=False),
     sa.Column('branch_name', sa.String(), nullable=False),
     sa.Column('address', sa.String(), nullable=False),
-    sa.Column('branch_code', sa.String(), nullable=False),
+    sa.Column('branch_code', sa.String(length=4), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id_branch'),
     sa.UniqueConstraint('branch_code')
     )
     op.create_table('tb_user',
     sa.Column('id_user', sa.UUID(), nullable=False),
-    sa.Column('nama', sa.String(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('password', sa.String(), nullable=False),
-    sa.Column('alamat', sa.String(), nullable=False),
-    sa.Column('hp', sa.String(), nullable=False),
+    sa.Column('address', sa.String(), nullable=False),
+    sa.Column('phone_number', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('is_admin', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id_user'),
@@ -44,7 +44,7 @@ def upgrade() -> None:
     )
     op.create_table('tb_account',
     sa.Column('id_account', sa.UUID(), nullable=False),
-    sa.Column('nomor_rekening', sa.String(length=10), nullable=True),
+    sa.Column('account_number', sa.String(length=10), nullable=False),
     sa.Column('account_name', sa.String(), nullable=False),
     sa.Column('balance', sa.Float(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
@@ -53,17 +53,17 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['id_branch'], ['tb_branch.id_branch'], ),
     sa.ForeignKeyConstraint(['id_user'], ['tb_user.id_user'], ),
-    sa.PrimaryKeyConstraint('nomor_rekening'),
-    sa.UniqueConstraint('nomor_rekening')
+    sa.PrimaryKeyConstraint('account_number'),
+    sa.UniqueConstraint('account_number')
     )
     op.create_table('tb_transaction',
     sa.Column('id_transaction', sa.UUID(), nullable=False),
-    sa.Column('nomor_rekening', sa.String(length=10), nullable=True),
-    sa.Column('type_transaction', sa.Enum('DEBIT', 'CREDIT', name='transactionstatus'), nullable=False),
+    sa.Column('account_number', sa.String(length=10), nullable=True),
+    sa.Column('type_transaction', sa.Enum('debit', 'credit', name='transactionstatus'), nullable=False),
     sa.Column('amount', sa.Float(), nullable=False),
     sa.Column('notes', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['nomor_rekening'], ['tb_account.nomor_rekening'], ),
+    sa.ForeignKeyConstraint(['account_number'], ['tb_account.account_number'], ),
     sa.PrimaryKeyConstraint('id_transaction')
     )
     # ### end Alembic commands ###

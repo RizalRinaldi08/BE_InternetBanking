@@ -17,14 +17,14 @@ def get_balance(id_account):
         abort(404)
     j = get_jwt()
     if j["is_admin"] == False:
-        return jsonify ({"msg": "You Are Not Allowed"}), 401
+        return jsonify ({"msg": "you are not allowed"}), 401
     if not account:
-        return {'error': 'Account Not Found'}, 404
+        return {'error': 'account not found'}, 404
 
     return {
-        'Account Name': account.account_name,
-        'Balance': account.balance,
-        'Account Active': account.is_active
+        'account_name': account.account_name,
+        'balance': account.balance,
+        'account_active': account.is_active
     }, 200
 
 
@@ -33,52 +33,53 @@ def get_balance(id_account):
 def create_account():
     j = get_jwt()
     if j["is_admin"] == False:
-        return jsonify ({"msg" : "You Are Not Allowed"}), 401
+        return jsonify ({"msg" : "you are not allowed"}), 401
     data = request.get_json()
-    user = User.query.filter_by(username=data.get('username')).first()
-    branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    user = User.query.filter_by(id_user=data.get('id_user')).first()
+    # branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    branch = Branch.query.filter_by(id_branch=data.get('id_branch')).first()
     print(user,branch)
     
     if not user :
-        return { 'error': 'User not found'}, 404
+        return { 'error': 'user not found'}, 404
     
     if not branch:
-        return { 'error' : 'Branch not found'}, 404    
+        return { 'error' : 'branch not found'}, 404    
     
     balance = data.get('balance')
     if balance is None or balance < 50000:
-        return { 'error' : 'Minimum Balance 50.000'}, 400
+        return { 'error' : 'minimum balance 50.000'}, 400
 
     account = Account (    
         id_user = user.id_user,
         id_branch = branch.id_branch,
         account_name = data['account_name'],
-        nomor_rekening = data['nomor_rekening'],
+        account_number = data['account_number'],
         balance = 0
     )
     session.add(account)
 
     transaction = Transaction (
         amount = balance,
-        type_transaction = TransactionStatus.CREDIT,
-        nomor_rekening = account.nomor_rekening,
-        notes = "FIRST TOP UP"
+        type_transaction = TransactionStatus.credit,
+        account_number = account.account_number,
+        notes = "first top up"
     )
     account.balance += balance
 
     session.add(transaction)
     session.commit()
     return {
-        'Account Nama' : account.account_name,
-        'Balance' : account.balance,
-        'Acount Active' : account.is_active,
-        'nomor_rekening' : account.nomor_rekening,
-        'Nama' : user.nama,
-        'Branch' : branch.city,
-        'Branch Name' : branch.branch_name,
-        'Branch Code' : branch.branch_code,
-        'Address of Branch' : branch.address, 
-        'Notes' : transaction.notes
+        'account_name' : account.account_name,
+        'balance' : account.balance,
+        'account_active' : account.is_active,
+        'account_number' : account.account_number,
+        'name' : user.name,
+        'branch' : branch.city,
+        'branch_name' : branch.branch_name,
+        'branch_code' : branch.branch_code,
+        'address_of_branch' : branch.address, 
+        'notes' : transaction.notes
     }, 201
 
 @account_api.route('/account/<uuid:id_account>', methods=['PUT'])
@@ -86,16 +87,18 @@ def create_account():
 def update_account(id_account):
     j = get_jwt()
     if j["is_admin"]==False:
-        return jsonify ({"msg":"You Are Not Allowed"}), 401
+        return jsonify ({"msg":"you are not allowed"}), 401
     data = request.get_json()
     account = Account.query.filter_by(id_account=id_account).first()
     # user = User.query.filter_by(username=data.get('username')).first()
-    branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    # branch = Branch.query.filter_by(branch_name=data.get('branch_name')).first()
+    branch = Branch.query.filter_by(id_branch=data.get('id_branch')).first()
     # print(user,branch)
 
     account.account_name = data['account_name']
-    account.nomor_rekening = data['nomor_rekening']
-    account.branch_name = data['branch_name']
+    # account.account_number = data['account_number']
+    account.id_branch = data['id_branch']
+    account.is_active = data['is_active']
 
     # if not account :
     #     return {'error': 'Account Not Found'}, 404
@@ -105,7 +108,7 @@ def update_account(id_account):
     # if 'balance' in data:
     #     balance = data['balance']
     #     if balance < 50000:
-    #         return {'error' : 'Minimum balance 50.000'}, 400
+    #         return {'error' : 'minimum balance 50.000'}, 400
     #     account.balance = balance
     # if 'is_active' in data:
     #     account.is_active = data['is_active']
@@ -124,26 +127,26 @@ def update_account(id_account):
     #         return{'error': 'Branch Code Not Found'}, 404
     session.commit()
     return {
-        'Succes' : 'Account Has Been Succesfully Updated',
-        'Account Nama' : account.account_name,
-        'Balance' : account.balance,
-        'Acount Active' : account.is_active,
-        'Nama' : account.user.nama,
-        'Branch' : branch.city,
-        'Branch Name' : branch.branch_name,
-        'Branch Code' : branch.branch_code,
-        'Address of Branch' : branch.address
+        'succes' : 'account has been succesfully updated',
+        'account_name' : account.account_name,
+        'balance' : account.balance,
+        'account_active' : account.is_active,
+        'name' : account.user.name,
+        'branch' : branch.city,
+        'branch_name' : branch.branch_name,
+        'branch_code' : branch.branch_code,
+        'address_of_branch' : branch.address
     }, 201
 
-@account_api.route('/account/:id/close',methods=['PUT'])
+@account_api.route('/account/close/<uuid:id_account>',methods=['PUT'])
 @jwt_required()
-def close_account(id):
+def close_account(id_account):
     j = get_jwt()
     if j["is_admin"]==False:
-        return jsonify ({"msg":"You Are Not Allowed"})
-    account = Account.query.get(id_account=id)
+        return jsonify ({"msg":"you are not allowed"})
+    account = Account.query.filter_by(id_account=id_account).first()
     if not account:
-        return{'error':'Account not found'}, 404
+        return{'error':'account not found'}, 404
     account.is_active = False
     session.commit()
-    return {'message':'Account Closed Succesfully'}
+    return {'message':'account closed succesfully'}

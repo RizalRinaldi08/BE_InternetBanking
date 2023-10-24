@@ -21,7 +21,7 @@ report_api = Blueprint('report_api', __name__)
 def branch_report():
     j = get_jwt()
     if j["is_admin"] == False:
-        return jsonify ({"msg":"You Are Not Allowed"}), 401
+        return jsonify ({"msg":"you are not allowed"}), 401
 
     # Aliasing tabel Account dan User untuk menghitung jumlah akun dan jumlah pengguna 
     AccountAlias = aliased(Account)
@@ -77,7 +77,7 @@ def get_dormant():
         Branch.id_branch == Account.id_branch
     ).outerjoin(
         Transaction, 
-        Transaction.nomor_rekening == Account.nomor_rekening
+        Transaction.account_number == Account.account_number
     ).filter(
         Account.is_active.is_(False)
     ).order_by(
@@ -101,7 +101,7 @@ def get_dormant():
 def get_filter():
     j = get_jwt()
     if j["is_admin"]==False:
-        return jsonify ({"msg":"You Are Not Allowed"})
+        return jsonify ({"msg":"you are not allowed"})
     data = request.get_json()
     start_date = data.get('start_date')
     end_date = data.get('end_date')
@@ -110,7 +110,7 @@ def get_filter():
     query = text(
         f"select t.type_transaction,sum(t.amount)\
             from tb_transaction as t\
-            join tb_account as a on a.nomor_rekening = t.nomor_rekening\
+            join tb_account as a on a.account_number = t.account_number\
             where t.created_at >= '{start_date}' and t.created_at <= '{end_date}' and a.id_branch =\
             (SELECT id_branch from tb_branch\
                 where tb_branch.branch_name='{branch_name}')\
@@ -126,18 +126,18 @@ def get_filter():
         "end_date": end_date
     }
     for r in result:
-        if 'type_transaction' in r and r['type_transaction']=='DEBIT' :
-            result2['DEBIT'] = r['sum']
-    if 'DEBIT' not in result2:
-        result2['DEBIT'] = 0
+        if 'type_transaction' in r and r['type_transaction']=='debit' :
+            result2['debit'] = r['sum']
+    if 'debit' not in result2:
+        result2['debit'] = 0
 
     for r in result:
-        if 'type_transaction' in r and r['type_transaction']=='CREDIT' :
-            result2['CREDIT'] = r['sum']
-    if 'CREDIT' not in result2:
-        result2['CREDIT'] = 0
+        if 'type_transaction' in r and r['type_transaction']=='credit' :
+            result2['credit'] = r['sum']
+    if 'credit' not in result2:
+        result2['credit'] = 0
  
-    if 'CREDIT' not in result2:
+    if 'credit' not in result2:
         print("tidak ada")
     print(result2)
     return result2

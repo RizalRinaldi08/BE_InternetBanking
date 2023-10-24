@@ -14,7 +14,7 @@ def get_report_filter(start_date, end_date, branch_name):
     query = text(
         f"select t.type_transaction,sum(t.amount)\
             from tb_transaction as t\
-            join tb_account as a on a.nomor_rekening = t.nomor_rekening\
+            join tb_account as a on a.account_number = t.account_number\
             where t.created_at >= '{start_date}' and t.created_at <= '{end_date}' and a.id_branch =\
             (SELECT id_branch from tb_branch\
                 where tb_branch.branch_name='{branch_name}')\
@@ -31,42 +31,42 @@ def get_report_filter(start_date, end_date, branch_name):
         "end_date": end_date
     }
     for r in result:
-        if 'type_transaction' in r and r['type_transaction']=='DEBIT' :
-            result2['DEBIT'] = r['sum']
-    if 'DEBIT' not in result2:
-        result2['DEBIT'] = 0
+        if 'type_transaction' in r and r['type_transaction']=='debit' :
+            result2['debit'] = r['sum']
+    if 'debit' not in result2:
+        result2['debit'] = 0
 
     for r in result:
-        if 'type_transaction' in r and r['type_transaction']=='CREDIT' :
-            result2['CREDIT'] = r['sum']
-    if 'CREDIT' not in result2:
-        result2['CREDIT'] = 0
+        if 'type_transaction' in r and r['type_transaction']=='credit' :
+            result2['credit'] = r['sum']
+    if 'credit' not in result2:
+        result2['credit'] = 0
          
-    if 'CREDIT' not in result2:
+    if 'credit' not in result2:
         print("tidak ada")
     print(result2)
     return result2
 
-def get_history_account(nomor_rekening):
-    transactions = Transaction.query.filter_by(nomor_rekening=nomor_rekening).order_by(Transaction.created_at.asc()).all()
+def get_history_account(account_number):
+    transactions = Transaction.query.filter_by(account_number=account_number).order_by(Transaction.created_at.asc()).all()
 
     transaction_list = []
 
     last_balance = 0
     for transaction in transactions:
         transaction_data = {
-            "Balance" : last_balance,
-            "Tanggal Transaksi" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            "balance" : last_balance,
+            "transaction_date" : transaction.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
-        if transaction.type_transaction == TransactionStatus.CREDIT:
-            transaction_data['CREDIT'] = transaction.amount
-            transaction_data['DEBIT'] = 0
-            transaction_data['Balance'] += transaction.amount
+        if transaction.type_transaction == TransactionStatus.credit:
+            transaction_data['credit'] = transaction.amount
+            transaction_data['debit'] = 0
+            transaction_data['balance'] += transaction.amount
         else:
-            transaction_data['DEBIT'] = transaction.amount
-            transaction_data['CREDIT'] = 0
-            transaction_data['Balance'] -= transaction.amount
-        last_balance = transaction_data['Balance']
+            transaction_data['debit'] = transaction.amount
+            transaction_data['credit'] = 0
+            transaction_data['balance'] -= transaction.amount
+        last_balance = transaction_data['balance']
         transaction_data['notes'] = transaction.notes
     
         transaction_list.append(transaction_data)
@@ -125,7 +125,7 @@ def get_dormant():
         Branch.id_branch == Account.id_branch
     ).outerjoin(
         Transaction, 
-        Transaction.nomor_rekening == Account.nomor_rekening
+        Transaction.account_number == Account.account_number
     ).filter(
         Account.is_active.is_(False)
     ).order_by(

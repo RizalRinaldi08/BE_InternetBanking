@@ -14,7 +14,7 @@ def login():
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        return jsonify({"msg": "Username tidak ada"}), 401
+        return jsonify({"msg": "username not found"}), 401
     match = bcrypt.checkpw(password.encode('utf-8'),user.password.encode('utf-8'))
     print(match)
 
@@ -26,7 +26,7 @@ def login():
 
         return jsonify(access_token=access_token, refresh_token=refresh_token)
     else:
-        return jsonify({"msg": "Password salah"}), 401
+        return jsonify({"msg": "username or password wrong"}), 401
 
 
 
